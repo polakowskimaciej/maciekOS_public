@@ -1,0 +1,34 @@
+{
+  "overview": "This service object performs an initial synchronization of contract data from an external system.",
+  "execution_flow": [
+    "Service is instantiated with a contract identifier",
+    "call method is invoked",
+    "External API is queried for contract data",
+    "Existing records are looked up or updated",
+    "Synchronization result is returned"
+  ],
+  "components": [
+    {
+      "name": "initialize",
+      "role": "Stores the contract identifier for later use"
+    },
+    {
+      "name": "call",
+      "role": "Coordinates the synchronization process"
+    },
+    {
+      "name": "fetch_external_contract",
+      "role": "Retrieves contract data from external API"
+    }
+  ],
+  "data_flow": [
+    "Contract identifier is passed into the service",
+    "External contract data is mapped to internal attributes",
+    "Attributes are persisted to the database"
+  ],
+  "assumptions": [
+    "External API returns valid contract data",
+    "Associated person record exists or can be created",
+    "Database transactions succeed"
+  ]
+}

@@ -1,0 +1,135 @@
+id: results-verify
+version: 2026-02-03
+description: "Deterministic verification of Testmo execution results against Jira and code summaries"
+
+vars:
+  default_model: "moonshotai/kimi-k2.5"
+  examples:
+    - id: "example_01"
+      input: "_examples/results_verify/results_verify_example_01_input.txt"
+    - id: "example_01"
+      output: "_examples/results_verify/results_verify_schema.json"
+  schema_path: "_examples/code_review/code_review_schema.json"
+
+input_contract:
+  required_fields:
+    - testmo_results_csv
+    - jira_summary
+    - code_summary
+
+system_message: |
+  You are a deterministic QA verification assistant.
+
+  Your task is to COMPARE executed Testmo test results
+  against Jira intent and code change summaries.
+
+  CRITICAL RULES:
+  - Do NOT infer correctness or business intent
+  - Do NOT speculate why something failed or passed
+  - Do NOT suggest fixes or improvements
+  - Absence of data is a finding
+  - Conflicts are reported, never resolved
+
+  OUTPUT RULES:
+  - Output MUST be valid JSON
+  - Output MUST match the schema exactly
+  - No explanations outside JSON
+  - No markdown
+  - No reasoning or analysis text
+
+verification_scope: |
+  The verification checks ONLY the following:
+
+  1. Coverage presence
+     - Jira items with no corresponding executed Testmo cases
+     - Code changes with no corresponding executed Testmo cases
+
+  2. Execution status alignment
+     - Test cases marked as failed or skipped for Jira-required behavior
+     - Test cases passing for behavior not mentioned in Jira
+
+  3. Structural mismatches
+     - Test case titles not traceable to Jira or code summary items
+     - Jira requirements not traceable to any executed test
+
+  The workflow does NOT:
+  - Judge whether tests are sufficient
+  - Judge whether failures are acceptable
+  - Assume 1:1 mapping unless explicitly present in inputs
+
+instructions: |
+  Given:
+  - Testmo execution results (CSV)
+  - Jira summary (facts only)
+  - Code summary (diff description only)
+
+  Perform a factual comparison.
+
+  For each finding:
+  - Identify the source (jira_summary | code_summary | testmo_results)
+  - State what is missing, extra, or mismatched
+  - Reference identifiers exactly as they appear in input
+  - Do NOT normalize names
+  - Do NOT invent identifiers
+
+  If no findings exist, output an empty findings array.
+
+output_schema:
+  type: object
+  required:
+    - summary
+    - findings
+  properties:
+    summary:
+      type: string
+      description: "High-level factual outcome of the verification"
+    findings:
+      type: array
+      items:
+        type: object
+        required:
+          - type
+          - source
+          - reference
+          - description
+        properties:
+          type:
+            type: string
+            enum:
+              - missing_test_coverage
+              - unreferenced_test
+              - failed_required_test
+              - skipped_required_test
+              - orphan_code_change
+              - orphan_jira_requirement
+          source:
+            type: string
+            enum:
+              - testmo_results
+              - jira_summary
+              - code_summary
+          reference:
+            type: string
+            description: "Exact identifier or title as seen in input"
+          description:
+            type: string
+            description: "Plain factual description of the mismatch"
+        additionalProperties: false
+  additionalProperties: false
+
+steps:
+  - name: load_examples
+    type: load_examples
+    examples: "{{vars.examples}}"
+
+  - name: prepare_prompt
+    type: template
+    include_examples: true
+
+  - name: load_schema
+    type: load_schema
+    path: "{{vars.schema_path}}"
+
+  - name: validate_output
+    type: validate_json
+    schema: "{{vars.schema_path}}"

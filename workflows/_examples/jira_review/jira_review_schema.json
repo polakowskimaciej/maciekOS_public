@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "ticket_key",
+    "reference",
+    "title",
+    "overall_assessment",
+    "findings",
+    "missing_information",
+    "testing_requirements",
+    "risks",
+    "release_readiness"
+  ],
+  "properties": {
+    "ticket_key": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string",
+      "one of": ["ticket key", "api request name", "feature flow name"]
+    },
+    "overall_assessment": {
+      "type": "string",
+      "enum": ["acceptable", "needs_clarification", "not_ready"]
+    },
+    "findings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Observed facts or confirmed issues"
+    },
+    "missing_information": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Required details not present in ticket"
+    },
+    "testing_requirements": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Concrete tests that must be executed or added"
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Potential failure modes or regressions"
+    },
+    "release_readiness": {
+      "type": "string",
+      "enum": [
+	"ready_for_development",
+        "ready_for_testing",
+        "ready_for_merge",
+        "blocked"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,111 @@
+id: code-summary
+version: 2025-01-01
+description: "Deterministic factual summary of code changes"
+
+vars:
+  default_model: "moonshotai/kimi-k2.5"
+  examples_path: 
+  examples: 
+    - id: "example_01"
+      input: "_examples/code_summary/code_summary_example_01_input.txt"
+      description: "example of mid complexity code adding new API calls"
+    - id: "example_01"
+      output: "_examples/code_summary/code_summary_example_01_output.json"
+      description: "example of mid complexity code adding new API calls"
+  schema_path: "_examples/code_summary/code_summary_schema.json"
+
+validators:
+  - name: "json-schema"
+    schema: "./validators/code_summary_schema.json"
+
+input_contract:
+  required_fields:
+    - diff
+  optional_fields:
+    - ticket_key
+    - context
+
+system_message: |
+  You are a deterministic code analyst.
+
+  Your task is to DESCRIBE code changes, not to judge them.
+
+  Rules:
+  - Do not evaluate quality
+  - Do not suggest improvements
+  - Do not invent intent
+  - Do not assume bugs or correctness
+  - Describe only what can be inferred from the diff
+
+  Treat the diff as the only source of truth.
+
+  Epistemic rules (CRITICAL):
+  
+  - The diff is the ONLY source of truth
+  - Do NOT infer intent, motivation, or ticket context
+  - Do NOT infer correctness, completeness, or safety
+  - Do NOT infer that tests passing implies full coverage
+
+instructions: |
+  Produce a factual summary of the code changes.
+
+  Focus on:
+  1. What files changed
+  2. What was added, modified, or removed
+  3. Structural or behavioral changes
+  4. Cross-cutting impact (data flow, API, config, tests)
+
+  Language rules:
+  - Use descriptive language only ("adds", "removes", "modifies")
+  - Avoid outcome-oriented words ("fixes", "ensures", "prevents", "supports")
+  - Avoid completeness claims ("fully", "all cases", "end-to-end")
+
+  Avoid:
+  - Opinions
+  - Recommendations
+  - Speculation
+
+  Test handling rules:
+  
+  - If tests are added or modified, state only that they exist
+  - Do NOT evaluate test quality or coverage
+  - Do NOT assume tests validate business behavior
+
+  Output MUST be valid JSON matching the schema exactly.
+  Do not include markdown.
+  Do not include commentary outside JSON.
+
+  This is the step 4. in the main QA workflow.
+  
+  Full workflow includes
+  1. jira_summary
+  2. jira_explain
+  3. jira_review
+  4. code_summary #you are here
+  5. code_review
+  6. code_explain
+  7. jira_code_review
+  8. gherkin_feature_write
+  9. gherkin_testmo_parse
+  10. testmo_write
+  11. jira_comment
+
+  output will go into the payload of the request with next workflow files
+
+output_format:
+  type: json
+  schema: code_summary
+
+steps:
+  - name: load_examples
+    type: load_examples
+    path: "{{vars.examples_path}}"
+
+  - name: prepare_prompt
+    type: template
+    include_examples: true
+
+  - name: validate_output
+    type: validate_json
+    schema: "{{vars.schema}}"
+

@@ -1,0 +1,24 @@
+# deprecated, easier to use --session param so You can do multiple ticket at the same time
+
+#!/usr/bin/env ruby
+# bin/maciekos-repl
+
+REAL_SCRIPT_PATH = File.realpath(__FILE__)
+APP_ROOT = File.expand_path("..", File.dirname(REAL_SCRIPT_PATH))
+
+ENV["BUNDLE_GEMFILE"] = File.join(APP_ROOT, "Gemfile")
+
+$LOAD_PATH.unshift(File.join(APP_ROOT, "lib")) unless $LOAD_PATH.include?(File.join(APP_ROOT, "lib"))
+
+require "bundler/setup"
+Bundler.setup(:default)
+
+require "maciekos/cli"
+
+if ARGV.empty?
+  puts "Usage: aikiq-repl <workflow-id>"
+  puts "Example: aikiq-repl code-review"
+  exit 1
+end
+
+Maciekos::CLI.start(["repl", *ARGV])

@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "ticket_key",
+    "alignment_status",
+    "matched_scope",
+    "missing_scope",
+    "extra_scope",
+    "test_alignment",
+    "overall_assessment"
+  ],
+  "properties": {
+    "ticket_key": {
+      "type": "string"
+    },
+    "alignment_status": {
+      "type": "string",
+      "enum": ["aligned", "partially_aligned", "misaligned"]
+    },
+    "matched_scope": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "missing_scope": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "extra_scope": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "test_alignment": {
+      "type": "string",
+      "enum": ["aligned", "partial", "missing", "not_specified"]
+    },
+    "overall_assessment": {
+      "type": "string",
+      "enum": [
+        "implementation_matches_ticket",
+        "implementation_incomplete",
+        "implementation_exceeds_ticket",
+        "implementation_misaligned"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

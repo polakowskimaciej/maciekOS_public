@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "failure_classification",
+    "suspected_failure_point",
+    "likely_causes",
+    "missing_information",
+    "next_steps",
+    "diagnostic_suggestions"
+  ],
+  "properties": {
+    "failure_classification": {
+      "type": "string",
+      "description": "High-level category of failure"
+    },
+    "suspected_failure_point": {
+      "type": "string",
+      "description": "Most likely location or layer where failure occurs"
+    },
+    "likely_causes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cause", "confidence"],
+        "properties": {
+          "cause": { "type": "string" },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          }
+        }
+      }
+    },
+    "missing_information": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Critical data needed to proceed"
+    },
+    "next_steps": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Concrete actions to gather evidence"
+    },
+    "diagnostic_suggestions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Safe, temporary changes to improve observability"
+    }
+  },
+  "additionalProperties": false
+}
+

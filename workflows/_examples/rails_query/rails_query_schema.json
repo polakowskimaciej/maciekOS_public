@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "assumptions",
+    "queries",
+    "notes"
+  ],
+  "properties": {
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Explicit assumptions made due to missing schema details"
+    },
+    "queries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "description",
+          "code"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "Rails console code snippet"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Safety notes or follow-up suggestions"
+    }
+  },
+  "additionalProperties": false
+}
+

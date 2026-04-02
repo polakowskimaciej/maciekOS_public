@@ -1,0 +1,117 @@
+id: jira-code-review
+version: 2026-01-29
+description: "Deterministic comparison of Jira ticket intent vs implemented code changes"
+
+vars:
+  default_model: "moonshotai/kimi-k2.5"
+  schema_path: "_examples/jira_code_review/jira_code_review_schema.json"
+  examples:
+    - id: "example_01"
+      input: "_examples/jira_code_review/jira_code_review_example_01_input.txt"
+    - id: "example_01"
+      output: "_examples/jira_code_review/jira_code_review_example_01_output.json"
+
+validators:
+  - name: "json-schema"
+    schema: "_examples/jira_code_review/jira_code_review_schema.json"
+
+input_contract:
+  required_fields:
+    - ticket_key
+    - jira_summary
+    - code_summary
+
+system_message: |
+  You are a deterministic QA alignment checker.
+
+  Your task is to COMPARE:
+  - Jira ticket summary (claimed behavior)
+  - Code summary (observed behavior)
+
+  Authority rules (CRITICAL):
+  - Jira summary and code summary have equal authority
+  - Neither input is assumed correct or complete
+  - Do NOT favor Jira intent or code behavior by default
+
+  Comparison rules:
+  - Compare ONLY explicit statements
+  - Do NOT infer implied requirements or behavior
+  - Do NOT resolve ambiguity
+  - If a claim cannot be directly mapped, mark it as ambiguous
+
+  Gap handling rules:
+  - Missing implementation MUST remain missing
+  - Extra implementation MUST remain extra
+  - Ambiguity MUST NOT be resolved
+
+  Prohibited behavior:
+  - Do NOT judge code quality
+  - Do NOT suggest improvements
+  - Do NOT propose tests
+  - Do NOT speculate about intent
+
+instructions: |
+  Perform an alignment check between Jira and code using set comparison.
+
+  For each explicit Jira claim:
+  - Determine if it is:
+    - matched (explicitly present in code summary)
+    - missing (not present in code summary)
+    - ambiguous (cannot be clearly mapped)
+
+  For each explicit code behavior:
+  - Determine if it is:
+    - matched (explicitly described in Jira summary)
+    - extra (not mentioned in Jira summary)
+    - ambiguous (cannot be clearly mapped)
+
+  Classify findings strictly as:
+  - matched
+  - missing
+  - extra
+  - ambiguous
+
+  Do NOT:
+  - Invent expectations
+  - Merge categories
+  - Resolve uncertainty
+
+  Output MUST be valid JSON matching the schema exactly.
+  Do not include markdown.
+  Do not include commentary outside JSON.
+
+  This is step 7 in the main QA workflow.
+
+  Full workflow includes:
+  1. jira_summary
+  2. jira_explain
+  3. jira_review
+  4. code_summary
+  5. code_review
+  6. code_explain
+  7. jira_code_review
+  8. gherkin_feature_write
+  9. gherkin_testmo_parse
+  10. testmo_write
+  11. jira_comment
+
+output_format:
+  type: json
+  schema: jira_code_review
+
+steps:
+  - name: load_examples
+    type: load_examples
+    examples: "{{vars.examples}}"
+
+  - name: prepare_prompt
+    type: template
+    include_examples: true
+
+  - name: load_schema
+    type: load_schema
+    path: "{{vars.schema_path}}"
+
+  - name: validate_output
+    type: validate_json
+    schema: "{{vars.schema_path}}"

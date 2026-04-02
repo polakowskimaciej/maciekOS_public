@@ -1,0 +1,33 @@
+{
+  "failure_classification": "runtime exception (nil access)",
+  "suspected_failure_point": "background job accessing associated record",
+  "likely_causes": [
+    {
+      "cause": "Associated record missing or deleted",
+      "confidence": "high"
+    },
+    {
+      "cause": "Race condition between job enqueue and record persistence",
+      "confidence": "medium"
+    },
+    {
+      "cause": "Unexpected nil return from external API mapping",
+      "confidence": "low"
+    }
+  ],
+  "missing_information": [
+    "Full backtrace with line numbers",
+    "Job arguments at execution time",
+    "Whether association is optional"
+  ],
+  "next_steps": [
+    "Inspect job arguments from error context",
+    "Check database for missing associated records",
+    "Search recent changes touching the job or model"
+  ],
+  "diagnostic_suggestions": [
+    "Add guard clause with explicit logging when association is nil",
+    "Log job arguments before accessing associations"
+  ]
+}
+

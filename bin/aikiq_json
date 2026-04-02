@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+input="${1:-/dev/stdin}"
+
+jq '
+  .selected.raw.message.content
+  | if type == "string" then fromjson else . end
+' "$input"
+

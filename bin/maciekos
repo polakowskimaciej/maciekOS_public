@@ -1,0 +1,98 @@
+#!/usr/bin/env ruby
+# bin/maciekos
+
+REAL_SCRIPT_PATH = File.realpath(__FILE__)
+APP_ROOT = File.expand_path("..", File.dirname(REAL_SCRIPT_PATH))
+
+# Force this script to use its own bundle, not the CWD's bundle
+ENV["BUNDLE_GEMFILE"] = File.join(APP_ROOT, "Gemfile")
+
+# Load environment variables from maciekOS .envrc or .env
+def load_env_file(path)
+  return unless File.exist?(path)
+  
+  File.readlines(path).each do |line|
+    line = line.strip
+    # Skip comments and empty lines
+    next if line.empty? || line.start_with?('#')
+    
+    # Parse export statements (from .envrc)
+    if line.start_with?('export ')
+      line = line.sub(/^export\s+/, '')
+    end
+    
+    # Parse KEY=VALUE or KEY="VALUE"
+    if line =~ /^([A-Z_][A-Z0-9_]*)=(.*)$/
+      key = $1
+      value = $2
+      
+      # Remove surrounding quotes
+      value = value.gsub(/^["']|["']$/, '')
+      
+      # Only set if not already in environment
+      ENV[key] = value unless ENV.key?(key)
+    end
+  end
+end
+
+load_env_file(File.join(APP_ROOT, ".envrc"))
+load_env_file(File.join(APP_ROOT, ".env"))
+
+$LOAD_PATH.unshift(File.join(APP_ROOT, "lib")) unless $LOAD_PATH.include?(File.join(APP_ROOT, "lib"))
+
+require "bundler/setup"
+Bundler.setup(:default)
+
+# Thor doesn't handle --file multiple times properly in older versions
+collected_files = []
+collected_dirs = []
+cleaned_argv = []
+
+i = 0
+while i < ARGV.length
+  arg = ARGV[i]
+  
+  if arg == "--file" || arg == "-f"
+    # Next arg is the file path
+    i += 1
+    collected_files << ARGV[i] if i < ARGV.length
+  elsif arg.start_with?("--file=")
+    collected_files << arg.split("=", 2)[1]
+  elsif arg == "--dir" || arg == "-d"
+    i += 1
+    collected_dirs << ARGV[i] if i < ARGV.length
+  elsif arg.start_with?("--dir=")
+    collected_dirs << arg.split("=", 2)[1]
+  else
+    cleaned_argv << arg
+  end
+  
+  i += 1
+end
+
+# Re-add collected files/dirs as comma-separated strings
+if collected_files.any?
+  cleaned_argv << "--files=#{collected_files.join(',')}"
+end
+if collected_dirs.any?
+  cleaned_argv << "--dirs=#{collected_dirs.join(',')}"
+end
+
+begin
+  require "maciekos/workflow_engine"
+  engine = Maciekos::WorkflowEngine.new
+  known_workflows = engine.list_workflows
+rescue => _e
+  known_workflows = []
+end
+
+# Transform workflow shortcuts
+if cleaned_argv.length > 0
+  first = cleaned_argv[0].to_s
+  if known_workflows.include?(first)
+    cleaned_argv.unshift("run_workflow")
+  end
+end
+
+require "maciekos/cli"
+Maciekos::CLI.start(cleaned_argv)

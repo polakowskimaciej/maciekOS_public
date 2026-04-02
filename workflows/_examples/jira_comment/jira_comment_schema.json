@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["comment_body", "mode_used"],
+  "properties": {
+    "comment_body": {
+      "type": "string",
+      "description": "Final Jira comment text, ready to paste"
+    },
+    "mode_used": {
+      "type": "string",
+      "enum": ["create", "append"],
+      "description": "Mode inferred and used by the model"
+    },
+    "missing_data": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Verification data that was not present in the input",
+      "default": []
+    }
+  },
+  "additionalProperties": false
+}

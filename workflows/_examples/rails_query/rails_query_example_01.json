@@ -1,0 +1,22 @@
+{
+  "assumptions": [
+    "User model exists",
+    "users table has an email column",
+    "User has_many :contracts"
+  ],
+  "queries": [
+    {
+      "description": "Find the user by email",
+      "code": "user = User.find_by(email: 'user@example.com')"
+    },
+    {
+      "description": "List last 5 contracts for the user",
+      "code": "user.contracts.order(created_at: :desc).limit(5)"
+    }
+  ],
+  "notes": [
+    "If user is nil, verify email value or column name",
+    "If contracts association is missing, inspect User.reflect_on_all_associations"
+  ]
+}
+

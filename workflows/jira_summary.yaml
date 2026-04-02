@@ -1,0 +1,116 @@
+id: jira_summary
+version: 2025-01-01
+description: "Factual summarization of Jira ticket description and comments"
+
+vars:
+  default_model: "openai/gpt-5.3-chat"
+  schema_path: "_examples/jira_summary/jira_summary_schema.json"
+  examples:
+    - id: "example_01"
+      input: "_examples/jira_summary/jira_summary_example_01_input.txt"
+      description: "example of mid complexity ticket"
+    - id: "example_01"
+      output: "_examples/jira_summary/jira_summary_example_01_output.json"
+      description: "example output"
+    - id: "example_02"
+      input: "_examples/jira_summary/jira_summary_example_02_input.txt"
+      description: "example of mid complexity ticket"
+    - id: "example_02"
+      output: "_examples/jira_summary/jira_summary_example_02_output.json"
+      description: "example output"
+
+validators:
+  - name: "json-schema"
+    schema: "./validators/jira_summary_schema.json"
+
+input_contract:
+  required_fields:
+    - ticket_key
+    - title
+    - description
+    - comments
+
+system_message: |
+   You are a Jira analyst and QA assistant.
+   
+   Task:
+   - Read the Jira ticket metadata, description, and all comments.
+   - Extract facts only (no speculation). Preserve technical accuracy. Prefer clarity.
+   - Follow the supplied JSON schema exactly. Do NOT add fields.
+   - If a required field has no factual data present, emit an empty container matching its expected type (array -> [], object/hash -> {}, string -> "").
+   
+   Actions extraction rule (explicit):
+   - For each comment, detect the comment author and statements of actions/changes (e.g., "I added ...", "Created branch ...", "Implemented ...", "Added test ...", "Reported ...").
+   - Map these to `actions_taken` as: "Author name" => [list of short action strings]. Preserve capitalization and spelling from the comment where possible.
+   - If a comment contains a branch name or `Branch *...*`, extract that to `branch` (string), and also include it in `actions_taken` for that author if the comment indicates creation.
+   
+   Conflict / inconsistency rules:
+   - Treat description as source-of-truth; treat comments as clarifications/decisions/changes.
+   - If description and comments conflict, list the conflict in `inconsistencies` (do not resolve it).
+   - Preserve noisy inputs; do NOT clean or normalise content beyond exact extraction.
+   
+   Output requirements:
+   - Output MUST be a single JSON object only (no surrounding markdown or commentary) that validates against the JSON schema.
+   - Always include all schema-required fields. Use empty containers for missing data.
+   - Be conservative: do not invent actor names or actions; only use items explicitly present in description/comments.
+   
+   Deterministic generation:
+   - Use deterministic sampling: temperature 0, top_p 1.
+   
+instructions: |
+  Summarize the Jira ticket using the following structure:
+
+  1. What the ticket is about
+  2. What was changed or decided (from comments)
+   - Report changes exactly as stated
+   - Do NOT infer intent, motivation, or final state unless explicitly stated
+  3. Current status and open questions
+  4. QA / testing implications
+   - Include ONLY implications explicitly mentioned or directly implied
+   - Do NOT propose new tests or strategies
+  5. Risks, assumptions, or ambiguities
+  6. Inconsistencies
+
+  Output MUST be valid JSON matching the schema exactly.
+  Do not add fields.
+  Do not include markdown.
+  Do not include commentary outside JSON.
+
+  This is the step 1. in the main QA workflow.
+  
+  Full workflow includes
+  1. jira_summary #you are here
+  2. jira_explain
+  3. jira_review
+  4. code_summary
+  5. code_review
+  6. code_explain
+  7. jira_code_review
+  8. gherkin_feature_write
+  9. gherkin_testmo_parse
+  10. testmo_write
+  11. jira_comment
+
+  output will go into the payload of the request with next workflow files
+
+output_format:
+
+  type: json
+  schema: jira_summary
+
+steps:
+  - name: load_examples
+    type: load_examples
+    examples: "{{vars.examples}}"
+
+  - name: prepare_prompt
+    type: template
+    include_examples: true
+
+  - name: load_schema
+    type: load_schema
+    path: "{{vars.schema_path}}"
+
+  - name: validate_output
+    type: validate_json
+    schema: "{{vars.schema_path}}"

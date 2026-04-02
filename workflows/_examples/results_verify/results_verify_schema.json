@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "summary",
+    "findings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "High-level factual outcome of the verification"
+    },
+    "findings": {
+      "type": "array",
+      "description": "List of detected mismatches or absences",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "source",
+          "reference",
+          "description"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "missing_test_coverage",
+              "unreferenced_test",
+              "failed_required_test",
+              "skipped_required_test",
+              "orphan_code_change",
+              "orphan_jira_requirement"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "testmo_results",
+              "jira_summary",
+              "code_summary"
+            ]
+          },
+          "reference": {
+            "type": "string",
+            "description": "Exact identifier or title as it appears in the input data"
+          },
+          "description": {
+            "type": "string",
+            "description": "Plain factual description of the mismatch or absence"
+          }
+        }
+      }
+    }
+  }
+}
+

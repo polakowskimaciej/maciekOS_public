@@ -1,0 +1,5 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string",
+  "description": "A Markdown fenced code block containing valid Gherkin. Output must specify ruby as the code language."
+}

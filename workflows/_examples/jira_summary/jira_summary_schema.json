@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "ticket_key",
+    "title",
+    "service",
+    "external_partner_synchronization",
+    "summary",
+    "decisions",
+    "open_questions",
+    "qa_notes",
+    "risks",
+    "attachments",
+    "external_links",
+    "branch"
+  ],
+  "properties": {
+    "ticket_key": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "service": {
+      "possible_values": ["backend","jsonizer","notifier","frontend", null],
+      "description": "list all the services the ticket relates to"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "deployment_target": {
+	    "type": "array",
+      "possible_values": ["redacted", "both", null],
+      "description": "list only one value",
+      "detection_rules": {
+	      "redacted": "if text mentiones redacted"
+      }
+
+    },
+    "external_partner_synchronization": {
+	    "type": "array",
+      "possible_values": ["redacted"],
+      "description": "probably just one of these is relevant"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Short factual explanation of what the ticket is about"
+    },
+    "people": {
+      "type": "hash",
+      "description": "who is involved in the ticket",
+      "items": { "type": "string"}
+    },
+    "attachements": {
+	    "type": "array",
+	    "description": "what kind of attachements are in the ticket"
+    },
+    "external_links": {
+      "type": "hash",
+      "description": "list all external links, with info who pasted the link",
+      "detection_tips": ["starts with https:\\", "not always tagged as link"],
+      "examples": [
+	      "redacted" 
+      ]
+    },
+    "objects_in_question": {
+      "type": "hash",
+      "description": "object types mentioned in the ticket and their respective uuids"
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Confirmed decisions or changes derived from comments"
+    },
+    "actions_taken": {
+	    "type": "hash",
+	    "items": { "type": "array"},
+	    "description": "who did what"
+    },
+    "open_questions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Unresolved points or ambiguities"
+    },
+    "qa_notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Testing scope, environments, regression concerns"
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Known risks, assumptions, or dependencies"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "context",
+    "problem",
+    "intended_behavior",
+    "clarifications",
+    "assumptions"
+  ],
+  "properties": {
+    "context": {
+      "type": "string",
+      "description": "Background and context of the ticket"
+    },
+    "problem": {
+      "type": "string",
+      "description": "Problem the ticket is trying to solve"
+    },
+    "intended_behavior": {
+      "type": "string",
+      "description": "What the system is expected to do or change"
+    },
+    "clarifications": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Key clarifications or decisions from comments"
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Implicit or explicit assumptions in the ticket"
+    }
+  },
+  "additionalProperties": false
+}

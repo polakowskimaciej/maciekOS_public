@@ -1,0 +1,317 @@
+id: code-review
+version: 2026-02-03
+description: "Rule-based code review with structured JSON output"
+
+vars:
+  default_model: "anthropic/claude-3.5-sonnet"
+  examples:
+    - id: "example_01"
+      description: "Backend change with clear test coverage"
+      input: "_examples/code_review/code_review_example_01_input.txt"
+    - id: "example_01"
+      description: "Expected structured review output"
+      output: "_examples/code_review/code_review_example_01_output.json"
+
+validators:
+  - name: "json-schema"
+    schema: "_examples/code_review/code_review_schema.json"
+
+review_rules:
+  rule_categories:
+
+    authorization:
+      description: "Detection of missing or bypassed authorization enforcement"
+      paths:
+        - "app/controllers/**/*.rb"
+
+      rules:
+
+        skip_authorization:
+          severity: "high"
+          category: "security"
+          description: "Authorization callback explicitly skipped"
+          match:
+            - pattern: "skip_after_action\\s+:verify_authorized"
+          message: "Controller skips verify_authorized callback"
+          suggestion: "Ensure authorization is explicitly enforced or justified"
+
+        missing_policy_check:
+          severity: "medium"
+          category: "security"
+          description: "Controller action without visible authorization call"
+          match:
+            - pattern: "def\\s+[a-z_]+"
+          exclusion:
+            - pattern: "authorize\\("
+            - pattern: "policy_scope\\("
+          message: "Controller action may lack explicit authorization enforcement"
+          suggestion: "Verify that policy authorization is enforced for this action"
+
+    rake_tasks:
+      description: "Rules for rake task files"
+      paths: ["lib/tasks/**/*.rake"]
+      default_severity: "low"
+      desired_patterns: []
+      ignored_patterns:
+        - "rescue => e"
+        - "ensure"
+        - "begin/rescue without specific error class"
+      reason: "Tasks should be resilient and continue on errors"
+
+    migrations:
+      description: "Rules for database migrations"
+      paths: ["db/migrate/*.rb"]
+      ignored_patterns:
+        - "execute"
+        - "raw SQL"
+      reason: "Migrations are trusted code, reviewed separately"
+
+    tests:
+      description: "Rules for test files and test coverage"
+      paths:
+        - "test/**/*.rb"
+        - "spec/**/*.rb"
+
+      coverage_rules:
+        new_code:
+          severity: "high"
+          check: "missing_test_file"
+          message: "New functionality requires test coverage"
+          patterns:
+            - new_files: ["app/**/*.rb", "lib/**/*.rb"]
+              require_test: ["test/**/*_test.rb", "spec/**/*_spec.rb"]
+
+        modified_code:
+          severity: "medium"
+          check: "modified_without_test_changes"
+          message: "Changes to existing code should include test updates"
+          patterns:
+            - source: ["app/**/*.rb"]
+              test: ["test/**/*_test.rb"]
+            - source: ["lib/**/*.rb"]
+              test: ["test/lib/**/*_test.rb"]
+
+      test_quality_rules:
+        - rule: "assert_presence"
+          severity: "medium"
+          message: "New tests should include assertions"
+          pattern: "assert|expect"
+
+        - rule: "test_naming"
+          severity: "low"
+          message: "Test names should describe behavior"
+          pattern: "test '[a-z]|test \"[a-z]"
+
+      ignored_patterns:
+        - severity: "ignore"
+          category: "style"
+          patterns:
+            - "rescue => e"
+            - "multiple describes in one file"
+            - "method length"
+          reason: "Style issues are explicitly ignored"
+
+    mechanical_typos:
+      description: "Detection of mechanical, non-semantic coding typos"
+      paths:
+        - "app/**/*.rb"
+        - "lib/**/*.rb"
+
+      rules:
+
+        missing_mutation_bang:
+          severity: "high"
+          category: "bug"
+          description: "Likely missing mutating bang method"
+          match:
+            - pattern: '\.(merge|update|compact|uniq|sort|reverse)\('
+          exclusion:
+            - pattern: '\.\1!\('
+            - pattern: '='
+          message: "Possible missing '!' on mutating method call"
+          suggestion: "If mutation is intended, use the bang variant (e.g. merge!)"
+
+        duplicated_characters:
+          severity: "low"
+          category: "bug"
+          description: "Duplicated characters in identifiers"
+          match:
+            - pattern: '\b[a-zA-Z_]*([a-zA-Z])\1{1,}[a-zA-Z_]*\b'
+          message: "Possible duplicated character in identifier"
+          suggestion: "Verify spelling of the identifier"
+
+        suspicious_method_names:
+          severity: "medium"
+          category: "bug"
+          description: "Method names with suspicious repeated fragments"
+          match:
+            - pattern: 'def\s+[a-zA-Z_]*(\w{3,})\1+[a-zA-Z_]*'
+          message: "Method name contains repeated character sequences"
+          suggestion: "Check method name for accidental duplication"
+
+        inconsistent_variable_naming:
+          severity: "low"
+          category: "bug"
+          description: "Variables with very similar names used in the same scope"
+          match:
+            - pattern: '\b([a-zA-Z_]{4,})\b'
+          comparison:
+            distance: 1
+          message: "Suspiciously similar variable names detected"
+          suggestion: "Verify variable names are intentional and not typos"
+
+        keyword_like_identifiers:
+          severity: "medium"
+          category: "bug"
+          description: "Identifiers close to Ruby keywords"
+          match:
+            - pattern: '\b(def|clas|modul|retrun|ensd)\b'
+          message: "Identifier resembles a Ruby keyword"
+          suggestion: "Check for misspelled Ruby keyword"
+
+    external_api_resilience:
+      description: "Detection of external API calls without resilience handling"
+      paths:
+        - "app/**/*.rb"
+        - "lib/**/*.rb"
+
+      rules:
+
+        external_call_without_rescue:
+          severity: "high"
+          category: "robustness"
+          description: "External API call not wrapped in explicit rescue"
+          match:
+            - pattern: "client\\.[a-z_]+\\("
+          exclusion:
+            - pattern: "rescue"
+          message: "External API call detected without visible exception handling"
+          suggestion: "Ensure API failures do not break user-facing feature"
+
+    nil_safety:
+      description: "Detection of chained method access without presence checks"
+      paths:
+        - "app/**/*.rb"
+        - "lib/**/*.rb"
+
+      rules:
+
+        unsafe_chained_call:
+          severity: "medium"
+          category: "bug"
+          description: "Chained method calls may raise NoMethodError on nil"
+          match:
+            - pattern: "\\w+\\.\\w+\\.\\w+"
+          exclusion:
+            - pattern: "&\\."
+          message: "Chained method call without safe navigation operator"
+          suggestion: "Consider using safe navigation (&.) or presence guard if nil is possible"
+
+    exception_handling:
+      description: "Detection of overly broad exception handling"
+      paths:
+        - "app/**/*.rb"
+        - "lib/**/*.rb"
+
+      rules:
+
+        rescue_standard_error:
+          severity: "medium"
+          category: "robustness"
+          description: "Rescue StandardError may hide unexpected failures"
+          match:
+            - pattern: "rescue\\s+StandardError"
+          message: "Broad rescue of StandardError detected"
+          suggestion: "Rescue specific exception classes where possible"
+
+        rescue_without_reraise:
+          severity: "high"
+          category: "robustness"
+          description: "Rescue block without explicit re-raise"
+          match:
+            - pattern: "rescue\\s+=>\\s+\\w+"
+          exclusion:
+            - pattern: "raise"
+          message: "Generic rescue may swallow unexpected errors"
+          suggestion: "Re-raise or handle specific exception classes explicitly"
+
+system_message: |
+  You are a deterministic, rule-based code reviewer.
+
+  Authority rules (CRITICAL):
+  - Review findings MUST be derived strictly from review_rules
+  - Do NOT introduce expectations not expressed in rules
+  - Do NOT reference Jira tickets or intended behavior
+  - If no rule matches, do not report an issue
+
+  CRITICAL OUTPUT CONSTRAINTS:
+  - Output MUST be JSON only
+  - Do NOT output reasoning, explanations, analysis, or thought process
+  - Do NOT restate rules
+  - Do NOT justify severity decisions
+  - Do NOT describe how conclusions were reached
+  - If an issue matches a rule, report it
+  - If no rule matches, emit no issue
+
+  Scope rules:
+  - Review ONLY the provided diff
+  - Do NOT speculate about missing code
+  - Do NOT evaluate architectural decisions
+
+  Typo detection rules:
+  - Only mechanical, pattern-based typos are allowed
+  - Do NOT infer developer intent
+  - Do NOT suggest refactors or improvements
+
+  Issue attribution rules:
+  - Each issue MUST reference a specific file
+  - Each issue MUST reference a specific line number
+  - If a line number cannot be identified, do not emit the issue
+
+  Approval rules:
+  - Any "high" severity issue → approval = changes_requested
+  - Only "medium" issues → approval = needs_discussion
+  - No issues → approval = approved
+
+  OUTPUT FORMAT ENFORCEMENT:
+  - Any text outside the JSON object is a fatal error
+  - Do NOT prefix or suffix the JSON
+  - Do NOT include markdown fences
+  - Do NOT include comments
+
+instructions: |
+  Review the code changes strictly using the provided rules.
+
+  For each issue:
+  - Match a rule explicitly
+  - Reference file path and line number
+  - Use rule-defined severity
+  - Provide a concrete, actionable suggestion
+
+
+  For each issue, output exactly one object with:
+  
+  - data: array of three strings:
+    1) severity (severe | high | medium | low)
+    2) category
+    3) file path with line number (path:line)
+  - message: issue description
+  - suggestion: concrete fix suggestion
+
+  Output test scenarios names with line number and filename 
+  Do NOT output severity, category, file, file_name, or line as separate fields.
+  Do NOT output notes.
+  Do NOT output any fields not defined in the schema.
+
+steps:
+  - name: load_examples
+    type: load_examples
+    path: "{{vars.examples_path}}"
+
+  - name: prepare_prompt
+    type: template
+    include_examples: true
+
+  - name: validate_output
+    type: validate_json
+    schema: "{{vars.validators[0].schema}}"

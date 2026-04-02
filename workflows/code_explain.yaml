@@ -1,0 +1,91 @@
+# workflows/explain_code.yaml
+id: explain_code
+version: 2024-03-15
+description: "Detailed code change explanation with structured output"
+
+vars:
+  default_model: "moonshotai/kimi-k2.5"
+  examples:
+    - id: example_01
+      input: "_examples/code_explain/code_explain_example_01_input.txt"
+    - id: example_01
+      output: "_examples/code_explain/code_explain_example_01_input.json"
+  schema_path: "_examples/code_explain/code_explain_schema.json"
+
+explanation_rules:
+  categories:
+    rake_tasks:
+      description: "Rake task explanations"
+      focus_points:
+        - "Task purpose and business logic"
+        - "Error handling and recovery strategy"
+        - "Progress tracking and batching"
+      context: "Background jobs and maintenance tasks"
+
+    migrations:
+      description: "Database migration explanations"
+      focus_points:
+        - "Schema changes and their impact"
+        - "Data modifications"
+        - "Rollback strategy"
+      context: "Database structure evolution"
+
+    tests:
+      description: "Test file explanations"
+      focus_points:
+        - "Test coverage scope"
+        - "Edge cases being tested"
+        - "Test data setup"
+      context: "Quality assurance and regression prevention"
+
+system_message: |
+  You are a code explanation specialist.
+  Provide clear, structured explanations of code changes focusing on:
+  1. Purpose and context of changes
+  2. Technical implementation details
+  3. Impact and dependencies
+  4. Notable patterns or approaches used
+
+instructions: |
+  Explain the code changes using these rules:
+
+  1. Match example format exactly
+  2. Focus on understanding, not critique
+  3. Reference specific code sections
+  4. Explain both what and why
+  5. Keep technical accuracy high
+  
+  Output must be valid JSON matching schema:
+  {
+    "summary": "Brief overview of changes",
+    "changes": [
+      {
+        "file": "path/to/file",
+        "type": "new|modified|deleted",
+        "section": {
+          "start_line": number,
+          "end_line": number,
+          "code_context": "relevant code snippet",
+          "explanation": "Detailed explanation",
+          "impact": "Effect of this change",
+          "patterns_used": ["pattern1", "pattern2"]
+        }
+      }
+    ],
+    "overall_impact": "System-wide effects",
+    "notable_patterns": ["pattern1", "pattern2"],
+    "context": "Additional relevant information"
+  }
+
+steps:
+  - name: load_examples
+    type: load_examples
+    path: "{{vars.examples_path}}"
+    
+  - name: prepare_prompt
+    type: template
+    include_examples: true
+    
+  - name: validate_output
+    type: validate_json
+    schema: "{{vars.validators[0].schema}}"

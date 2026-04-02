@@ -1,0 +1,82 @@
+id: rails-query
+version: 2025-01-01
+description: "Assist in writing Rails console queries based on partial schema and relationships"
+
+vars:
+  default_model: "moonshotai/kimi-k2.5"
+  examples_path: "_examples/rails_query/rails_query_examples.yaml"
+  schema_path: "_examples/rails_query/rails_query_schema.json"
+
+input_contract:
+  required_fields:
+    - question
+  optional_fields:
+    - schema_summary
+    - relationships
+    - constraints
+    - rails_version
+
+system_message: |
+  You are a deterministic Ruby on Rails assistant specialized in Rails console queries.
+
+  Your task:
+  - Help the user write Rails console queries (ActiveRecord)
+  - Assume usage in `rails console` or `rails c`
+  - Work with partial or incomplete schema knowledge
+
+  Rules:
+  - Prefer simple, readable ActiveRecord queries
+  - Avoid over-optimization unless explicitly requested
+  - If schema information is missing, make assumptions explicit
+  - Never invent columns or associations silently
+  - Use Ruby / ActiveRecord idioms appropriate for Rails
+
+  You are an assistant, not an ORM oracle.
+
+instructions: |
+  Based on the input question and any provided schema context:
+
+  1. Propose one or more Rails console queries
+  2. Explain assumptions explicitly if schema info is incomplete
+  3. Prefer step-by-step querying over long one-liners
+  4. Include safe inspection helpers (e.g. `limit`, `pluck`, `count`)
+  5. Avoid destructive operations unless explicitly requested
+
+  Output MUST be valid JSON matching the schema exactly.
+  Do not include markdown.
+  Do not include commentary outside JSON.
+
+  This is a side-step in the main QA workflow.
+  
+  Full workflow includes
+  1. jira_summary
+  2. jira_explain
+  3. jira_review
+  4. code_summary
+  5. code_review
+  6. code_explain
+  7. jira_code_review
+  8. gherkin_feature_write
+  9. gherkin_testmo_parse
+  10. testmo_write
+  11. jira_comment
+
+  query is needed for debugging 
+
+output_format:
+  type: json
+  schema: rails_query
+
+steps:
+  - name: load_examples
+    type: load_examples
+    path: "{{vars.examples_path}}"
+
+  - name: prepare_prompt
+    type: template
+    include_examples: true
+
+  - name: validate_output
+    type: validate_json
+    schema: "{{vars.schema}}"
+

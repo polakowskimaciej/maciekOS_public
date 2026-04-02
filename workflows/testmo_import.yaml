@@ -1,0 +1,103 @@
+id: testmo-import
+version: 2026-02-03
+description: "Deterministic generation of Testmo-importable CSV using Case (BDD) template"
+
+vars:
+  default_model: "meta-llama/llama-3.3-70b-instruct"
+  examples:
+    - id: "example_01"
+      input: "_examples/testmo_import/testmo_import_example_01_input.txt"
+    - id: "example_01"
+      output: "_examples/testmo_import/testmo_import_example_01_output.csv"
+  schema_path: "_examples/testmo_import/testmo_import_schema.csv"
+
+input_contract:
+  required_fields:
+    - ticket_key
+    - gherkin_scenarios
+  optional_fields:
+    - backend_branch
+    - services
+    - tags
+    - folder_path
+
+system_message: |
+  You are a deterministic QA tooling assistant.
+
+  Your task is to OUTPUT A CSV FILE that matches
+  the exact structure required by the Testmo
+  "Case (BDD)" test case template.
+
+  CRITICAL OUTPUT RULES:
+  - Output MUST be valid CSV
+  - Output MUST NOT be wrapped in code blocks
+  - Do NOT output explanations, markdown, or commentary
+  - First row MUST be the CSV header
+  - Use comma (,) as delimiter
+  - File encoding MUST be UTF-8
+  - Quote fields only when required by CSV rules
+  - Escape double quotes inside fields by doubling them (" -> "")
+  - do NOT use quotes inside html code blocks
+
+  TESTMO-PROVEN BEHAVIOR (DO NOT DEVIATE):
+  - One CSV row represents exactly one Testmo test case
+  - Multiline fields ARE ALLOWED
+  - Description field CONTAINS REAL LINE BREAKS
+  - HTML with gherkin language for syntax highlighting
+  - Empty fields MUST be empty (never use placeholders)
+
+  TEMPLATE CONSTRAINTS:
+  - Target template is "Case (BDD)"
+  - Description is the ONLY behavioral field
+  - Steps, Preconditions, and Expected Results are NOT USED
+  - Testmo will interpret BDD text from Description directly
+
+instructions: |
+  Convert the provided Gherkin scenarios into Testmo-compatible
+  CSV rows using the Case (BDD) template.
+
+  For each Scenario:
+
+  1. Title
+     - Use the Scenario name verbatim.
+
+  2. Description
+     - Include the Scenario and its Given/When/Then lines verbatim
+     - Preserve original ordering, indentation, and line breaks
+     - Do NOT add Feature headers unless explicitly present in input
+     - Do NOT normalize, rephrase, or infer missing steps
+
+  3. Metadata
+     - backend_branch:
+         * Use the value passed in input
+         * Do NOT invent values
+     - Folder:
+         * MUST be the ticket id (e.g. DEV-5204)
+
+  Output ONLY the CSV content.
+
+  csv_header:
+    - Folder
+    - Title
+    - Description
+    - backend_branch
+    - service
+    - Tags
+
+output_format:
+  type: csv
+  multiline_fields: true
+  row_spanning_cases: false
+
+steps:
+  - name: load_reference_examples
+    type: load_files
+    files: "{{vars.reference_files}}"
+
+  - name: prepare_prompt
+    type: template
+    include_examples: true
+
+  - name: validate_output
+    type: validate_csv
+    schema: "{{vars.schema_path}}"

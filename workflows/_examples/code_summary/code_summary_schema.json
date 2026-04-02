@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "files_changed",
+    "summary",
+    "details",
+    "tests"
+  ],
+  "properties": {
+    "ticket_key": {
+      "type": "string"
+    },
+    "files_changed": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of files touched by the change"
+    },
+    "summary": {
+      "type": "string",
+      "description": "High-level factual overview of the change"
+    },
+    "details": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Concrete descriptions of what changed"
+    },
+    "tests": {
+      "type": "string",
+      "enum": ["added", "modified", "unchanged", "not_present"],
+      "description": "Observed test changes based on diff"
+    }
+  },
+  "additionalProperties": false
+}
+

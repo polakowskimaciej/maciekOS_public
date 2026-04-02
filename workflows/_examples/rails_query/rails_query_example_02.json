@@ -1,0 +1,22 @@
+{
+  "assumptions": [
+    "Contract model exists",
+    "contracts table has created_at column",
+    "Contract belongs_to :partner"
+  ],
+  "queries": [
+    {
+      "description": "Define yesterday time range",
+      "code": "range = 1.day.ago.beginning_of_day..1.day.ago.end_of_day"
+    },
+    {
+      "description": "Group contracts by partner",
+      "code": "Contract.where(created_at: range).group(:partner_id).count"
+    }
+  ],
+  "notes": [
+    "If partner_id is named differently, adjust group column",
+    "Use includes(:partner) if you plan to inspect partner records"
+  ]
+}
+
