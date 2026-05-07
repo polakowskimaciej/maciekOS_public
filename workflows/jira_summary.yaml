@@ -4,6 +4,13 @@ description: "Factual summarization of Jira ticket description and comments"
 
 vars:
   default_model: "openai/gpt-5.3-chat"
+  # Drift gates: re-summarize only when the ticket has actually changed
+  # since the last snapshot. Skip when nothing's new (saves the LLM
+  # call) and skip when the latest comment is yours (own edits don't
+  # reset the baseline). Override either with --force-snapshot.
+  snapshot_jira_view: true
+  requires_jira_change: true
+  skip_if_self_authored: true
   schema_path: "_examples/jira_summary/jira_summary_schema.json"
   examples:
     - id: "example_01"

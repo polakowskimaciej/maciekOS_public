@@ -4,6 +4,12 @@ description: "Deterministic QA-oriented review of Jira ticket description, comme
 
 vars:
   default_model: "openai/gpt-5.3-chat"
+  # Drift gates: review depends only on ticket state — re-run only when
+  # the ticket has actually changed. Capture the snapshot for later
+  # diff inspection.
+  snapshot_jira_view: true
+  requires_jira_change: true
+  skip_if_self_authored: true
   schema_path: "_examples/jira_review/jira_review_schema.json"
   examples:
     - id: "example_01"

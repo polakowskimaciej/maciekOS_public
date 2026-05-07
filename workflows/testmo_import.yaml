@@ -72,7 +72,7 @@ instructions: |
          * Use the value passed in input
          * Do NOT invent values
      - Folder:
-         * MUST be the ticket id (e.g. DEV-5204)
+         * MUST be the ticket id (e.g. XX-1234)
 
   Output ONLY the CSV content.
 

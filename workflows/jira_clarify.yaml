@@ -4,6 +4,10 @@ description: "Pre-implementation clarification gate for ambiguous Jira requireme
 
 vars:
   default_model: "moonshotai/kimi-k2.5"
+  # Capture jira view fingerprint per run; skip when ticket hasn't changed.
+  snapshot_jira_view: true
+  requires_jira_change: true
+  skip_if_self_authored: true
   schema_path: "_examples/jira_clarify/jira_clarify_schema.json"
   examples:
     - id: "example_01"
